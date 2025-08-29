@@ -19,7 +19,6 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
   @override
   void initState() {
     super.initState();
-    // Inicia a busca pelos detalhes assim que a tela é criada
     _pokemonDetailFuture = _dataSource.fetchPokemonDetails(widget.pokemonUrl);
   }
 
@@ -42,8 +41,6 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
           if (!snapshot.hasData) {
             return const Center(child: Text("Pokémon não encontrado."));
           }
-
-          // Se tudo deu certo, 'pokemon' contém todos os detalhes
           final pokemon = snapshot.data!;
           final capitalizedName = pokemon.name[0].toUpperCase() + pokemon.name.substring(1);
 
@@ -60,12 +57,11 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '#${pokemon.id.toString().padLeft(3, '0')}', // Formata o número com 3 dígitos (ex: #001)
+                    '#${pokemon.id.toString().padLeft(3, '0')}', 
                     style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
                   
-                  // Seção de Tipos
                   const Text('Tipos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -73,7 +69,6 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Seção de Habilidades
                   const Text('Habilidades', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   Column(
                     children: pokemon.abilities.map((ability) => Text(ability)).toList(),

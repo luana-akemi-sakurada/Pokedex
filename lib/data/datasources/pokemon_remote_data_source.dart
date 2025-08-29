@@ -7,7 +7,6 @@ import '../models/pokemon_detail_model.dart';
 class PokemonRemoteDataSource {
   final String _baseUrl = "https://pokeapi.co/api/v2/";
 
-  // Método que busca a lista de Pokémon
   Future<List<PokemonListItemModel>> fetchPokemonList() async {
     // buscar os 20 primeiros Pokémon
     final response = await http.get(Uri.parse('${_baseUrl}pokemon?limit=20&offset=0'));
