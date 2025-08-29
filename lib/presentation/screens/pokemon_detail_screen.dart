@@ -1,0 +1,89 @@
+import 'package:flutter/material.dart';
+import '../../data/datasources/pokemon_remote_data_source.dart';
+import '../../data/models/pokemon_detail_model.dart';
+
+class PokemonDetailScreen extends StatefulWidget {
+  // A tela recebe a URL do Pokémon para buscar os detalhes
+  final String pokemonUrl;
+
+  const PokemonDetailScreen({super.key, required this.pokemonUrl});
+
+  @override
+  State<PokemonDetailScreen> createState() => _PokemonDetailScreenState();
+}
+
+class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
+  late Future<PokemonDetailModel> _pokemonDetailFuture;
+  final PokemonRemoteDataSource _dataSource = PokemonRemoteDataSource();
+
+  @override
+  void initState() {
+    super.initState();
+    // Inicia a busca pelos detalhes assim que a tela é criada
+    _pokemonDetailFuture = _dataSource.fetchPokemonDetails(widget.pokemonUrl);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Detalhes do Pokémon'),
+        backgroundColor: Colors.red,
+      ),
+      body: FutureBuilder<PokemonDetailModel>(
+        future: _pokemonDetailFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return Center(child: Text("Erro ao carregar: ${snapshot.error}"));
+          }
+          if (!snapshot.hasData) {
+            return const Center(child: Text("Pokémon não encontrado."));
+          }
+
+          // Se tudo deu certo, 'pokemon' contém todos os detalhes
+          final pokemon = snapshot.data!;
+          final capitalizedName = pokemon.name[0].toUpperCase() + pokemon.name.substring(1);
+
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(16.0),
+            child: Center(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Image.network(pokemon.imageUrl, height: 250, fit: BoxFit.contain),
+                  const SizedBox(height: 16),
+                  Text(
+                    capitalizedName,
+                    style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    '#${pokemon.id.toString().padLeft(3, '0')}', // Formata o número com 3 dígitos (ex: #001)
+                    style: const TextStyle(fontSize: 18, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Seção de Tipos
+                  const Text('Tipos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: pokemon.types.map((type) => Chip(label: Text(type))).toList(),
+                  ),
+                  const SizedBox(height: 20),
+                  
+                  // Seção de Habilidades
+                  const Text('Habilidades', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                  Column(
+                    children: pokemon.abilities.map((ability) => Text(ability)).toList(),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
