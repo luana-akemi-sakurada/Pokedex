@@ -19,12 +19,12 @@ class PokemonCard extends StatelessWidget {
           context,
           MaterialPageRoute(
             builder: (context) => PokemonDetailScreen(
-              pokemonUrl: pokemon.url, // aqui vai a URL do detalhe
+              pokemonUrl: pokemon.url,
             ),
           ),
         );
       },
-      borderRadius: BorderRadius.circular(10.0), // deixa o efeito de clique arredondado
+      borderRadius: BorderRadius.circular(10.0),
       child: Card(
         elevation: 4.0,
         shape: RoundedRectangleBorder(
@@ -38,20 +38,6 @@ class PokemonCard extends StatelessWidget {
               height: 100,
               width: 100,
               fit: BoxFit.contain,
-              loadingBuilder: (BuildContext context, Widget child, ImageChunkEvent? loadingProgress) {
-                if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded /
-                            loadingProgress.expectedTotalBytes!
-                        : null,
-                  ),
-                );
-              },
-              errorBuilder: (context, error, stackTrace) {
-                return const Icon(Icons.error, color: Colors.red, size: 50);
-              },
             ),
             const SizedBox(height: 8.0),
             Text(
