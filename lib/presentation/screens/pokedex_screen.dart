@@ -66,7 +66,6 @@ class _PokedexScreenState extends State<PokedexScreen> {
   }
 
   Future<void> _searchPokemon() async {
-    // ... (nenhuma mudança nesta função)
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) return;
 
@@ -132,17 +131,12 @@ class _PokedexScreenState extends State<PokedexScreen> {
                       mainAxisSpacing: 12.0,
                       childAspectRatio: 1.0,
                     ),
-                    // MODIFICADO: itemCount agora é o tamanho da lista + 1
-                    // Apenas adicionamos o item extra se a lista não estiver vazia
                     itemCount: _pokemonList.isEmpty ? 0 : _pokemonList.length + 1,
                     itemBuilder: (context, index) {
-                      // MODIFICADO: Lógica para decidir o que renderizar
                       if (index < _pokemonList.length) {
-                        // Se o índice é de um Pokémon, mostra o card
                         final pokemon = _pokemonList[index];
                         return PokemonCard(pokemon: pokemon);
                       } else {
-                        // Se for o último item, mostra o loader ou o botão
                         return Center(
                           child: _isLoading
                               ? const CircularProgressIndicator()
@@ -155,8 +149,6 @@ class _PokedexScreenState extends State<PokedexScreen> {
                     },
                   ),
           ),
-          // REMOVIDO: O botão e o indicador que ficavam aqui foram movidos
-          // para dentro do itemBuilder da GridView.
         ],
       ),
     );
