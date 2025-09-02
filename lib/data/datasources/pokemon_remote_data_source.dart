@@ -7,9 +7,9 @@ import '../models/pokemon_detail_model.dart';
 class PokemonRemoteDataSource {
   final String _baseUrl = "https://pokeapi.co/api/v2/";
 
-  Future<List<PokemonListItemModel>> fetchPokemonList() async {
-    // buscar os 20 primeiros Pokémon
-    final response = await http.get(Uri.parse('${_baseUrl}pokemon?limit=20&offset=0'));
+  Future<List<PokemonListItemModel>> fetchPokemonList({int limit = 20, int offset = 0}) async {
+    // buscar os Pokémon com base no limit e offset
+    final response = await http.get(Uri.parse('${_baseUrl}pokemon?limit=$limit&offset=$offset'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -19,7 +19,6 @@ class PokemonRemoteDataSource {
       throw Exception('Falha ao carregar a lista de Pokémon.');
     }
   }
-
   Future<PokemonDetailModel> fetchPokemonDetails(String pokemonUrl) async {
   final response = await http.get(Uri.parse(pokemonUrl));
 

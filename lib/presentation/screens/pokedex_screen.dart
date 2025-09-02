@@ -1,4 +1,3 @@
-
 import 'package:flutter/material.dart';
 import '../../data/datasources/pokemon_remote_data_source.dart';
 import '../../data/models/pokemon_list_item_model.dart';
@@ -13,15 +12,19 @@ class PokedexScreen extends StatefulWidget {
 }
 
 class _PokedexScreenState extends State<PokedexScreen> {
-  late Future<List<PokemonListItemModel>> _pokemonListFuture;
   final PokemonRemoteDataSource _dataSource = PokemonRemoteDataSource();
-
   final TextEditingController _searchController = TextEditingController();
+
+  List<PokemonListItemModel> _pokemonList = [];
+  int _offset = 0;
+  final int _limit = 20;
+  bool _isLoading = false;
+  bool _isFirstLoad = true;
 
   @override
   void initState() {
     super.initState();
-    _pokemonListFuture = _dataSource.fetchPokemonList();
+    _loadMorePokemons();
   }
 
   @override
@@ -30,7 +33,40 @@ class _PokedexScreenState extends State<PokedexScreen> {
     super.dispose();
   }
 
+  Future<void> _loadMorePokemons() async {
+    if (_isLoading) return;
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      final newPokemons = await _dataSource.fetchPokemonList(
+        limit: _limit,
+        offset: _offset,
+      );
+      setState(() {
+        _pokemonList.addAll(newPokemons);
+        _offset += _limit;
+        _isFirstLoad = false;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Falha ao carregar mais Pokémon: $e')),
+        );
+      }
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
   Future<void> _searchPokemon() async {
+    // ... (nenhuma mudança nesta função)
     final query = _searchController.text.trim().toLowerCase();
     if (query.isEmpty) return;
 
@@ -48,7 +84,7 @@ class _PokedexScreenState extends State<PokedexScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Pokémon não encontrado!')),
+          const SnackBar(content: Text('Pokémon não encontrado!')),
         );
       }
     }
@@ -85,38 +121,42 @@ class _PokedexScreenState extends State<PokedexScreen> {
             ),
           ),
           Expanded(
-            child: FutureBuilder<List<PokemonListItemModel>>(
-              future: _pokemonListFuture, 
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (snapshot.hasError) {
-                  return Center(child: Text('Ocorreu um erro: ${snapshot.error}'));
-                }
-
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(child: Text('Nenhum Pokémon encontrado.'));
-                }
-                final pokemons = snapshot.data!;
-                return GridView.builder(
-                  padding: const EdgeInsets.all(12.0),
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,      // 2 colunas
-                    crossAxisSpacing: 12.0, // Espaçamento horizontal
-                    mainAxisSpacing: 12.0,  // Espaçamento vertical 
-                    childAspectRatio: 1.0,  // Proporção (largura/altura) 
+            child: _isFirstLoad
+                ? const Center(child: CircularProgressIndicator())
+                : GridView.builder(
+                    padding: const EdgeInsets.all(12.0),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12.0,
+                      mainAxisSpacing: 12.0,
+                      childAspectRatio: 1.0,
+                    ),
+                    // MODIFICADO: itemCount agora é o tamanho da lista + 1
+                    // Apenas adicionamos o item extra se a lista não estiver vazia
+                    itemCount: _pokemonList.isEmpty ? 0 : _pokemonList.length + 1,
+                    itemBuilder: (context, index) {
+                      // MODIFICADO: Lógica para decidir o que renderizar
+                      if (index < _pokemonList.length) {
+                        // Se o índice é de um Pokémon, mostra o card
+                        final pokemon = _pokemonList[index];
+                        return PokemonCard(pokemon: pokemon);
+                      } else {
+                        // Se for o último item, mostra o loader ou o botão
+                        return Center(
+                          child: _isLoading
+                              ? const CircularProgressIndicator()
+                              : ElevatedButton(
+                                  onPressed: _loadMorePokemons,
+                                  child: const Text('Carregar Mais'),
+                                ),
+                        );
+                      }
+                    },
                   ),
-                  itemCount: pokemons.length,
-                  itemBuilder: (context, index) {
-                    final pokemon = pokemons[index];
-                    return PokemonCard(pokemon: pokemon);
-                  },
-                );
-              },
-            ),
           ),
+          // REMOVIDO: O botão e o indicador que ficavam aqui foram movidos
+          // para dentro do itemBuilder da GridView.
         ],
       ),
     );
