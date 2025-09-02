@@ -69,10 +69,19 @@ class _PokedexScreenState extends State<PokedexScreen> {
   }
 
   Future<void> _searchPokemon() async {
-    final query = _searchController.text.trim().toLowerCase();
-    if (query.isEmpty) return;
+    final rawQuery  = _searchController.text.trim().toLowerCase();
+    if (rawQuery .isEmpty) return;
 
-    final String url = 'https://pokeapi.co/api/v2/pokemon/$query';
+    String finalQuery;
+    final int? pokemonNumber = int.tryParse(rawQuery);
+
+    if (pokemonNumber != null) {
+      finalQuery = pokemonNumber.toString();
+    } else {
+      finalQuery = rawQuery;
+    }
+
+    final String url = 'https://pokeapi.co/api/v2/pokemon/$finalQuery';
     try {
       await _dataSource.fetchPokemonDetails(url);
       if (mounted) {

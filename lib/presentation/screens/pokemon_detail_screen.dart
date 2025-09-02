@@ -67,9 +67,10 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                   size: 28,
                 ),
                 onPressed: () {
+                  final correctUrl = 'https://pokeapi.co/api/v2/pokemon/${pokemon.id}/';
                   final pokemonAsListItem = PokemonListItemModel(
                     name: pokemon.name,
-                    url: widget.pokemonUrl,
+                    url: correctUrl,
                   );
                   context.read<FavoriteProvider>().toggleFavorite(pokemonAsListItem);
                 },
