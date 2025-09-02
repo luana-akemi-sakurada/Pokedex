@@ -1,19 +1,23 @@
+// lib/providers/favorite_provider.dart
+
 import 'package:flutter/material.dart';
+// Importe o modelo que você quer armazenar
+import '../../data/models/pokemon_list_item_model.dart';
 
 class FavoriteProvider extends ChangeNotifier {
-  final List<int> _favoritePokemonIds = [];
+  final List<PokemonListItemModel> _favorites = [];
 
-  List<int> get favoritePokemonIds => _favoritePokemonIds;
+  List<PokemonListItemModel> get favorites => _favorites;
 
-  bool isFavorite(int pokemonId) {
-    return _favoritePokemonIds.contains(pokemonId);
+  bool isFavorite(String pokemonName) {
+    return _favorites.any((pokemon) => pokemon.name == pokemonName);
   }
 
-  void toggleFavorite(int pokemonId) {
-    if (isFavorite(pokemonId)) {
-      _favoritePokemonIds.remove(pokemonId);
+  void toggleFavorite(PokemonListItemModel pokemon) {
+    if (isFavorite(pokemon.name)) {
+      _favorites.removeWhere((p) => p.name == pokemon.name);
     } else {
-      _favoritePokemonIds.add(pokemonId);
+      _favorites.add(pokemon);
     }
     notifyListeners();
   }

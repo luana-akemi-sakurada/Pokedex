@@ -1,7 +1,10 @@
+// lib/presentation/screens/pokemon_detail_screen.dart
+
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart'; // NOVO: Importa o pacote provider
+import 'package:provider/provider.dart';
 import '../../data/datasources/pokemon_remote_data_source.dart';
 import '../../data/models/pokemon_detail_model.dart';
+import '../../data/models/pokemon_list_item_model.dart';
 import '../providers/favorite_provider.dart';
 
 class PokemonDetailScreen extends StatefulWidget {
@@ -50,7 +53,7 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
         final capitalizedName = pokemon.name[0].toUpperCase() + pokemon.name.substring(1);
 
         final favoriteProvider = context.watch<FavoriteProvider>();
-        final isFavorite = favoriteProvider.isFavorite(pokemon.id);
+        final isFavorite = favoriteProvider.isFavorite(pokemon.name);
 
         return Scaffold(
           appBar: AppBar(
@@ -64,7 +67,11 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                   size: 28,
                 ),
                 onPressed: () {
-                  context.read<FavoriteProvider>().toggleFavorite(pokemon.id);
+                  final pokemonAsListItem = PokemonListItemModel(
+                    name: pokemon.name,
+                    url: widget.pokemonUrl,
+                  );
+                  context.read<FavoriteProvider>().toggleFavorite(pokemonAsListItem);
                 },
               ),
             ],

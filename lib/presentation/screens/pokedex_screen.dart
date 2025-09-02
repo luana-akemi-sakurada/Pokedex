@@ -1,8 +1,11 @@
+// lib/presentation/screens/pokedex_screen.dart
+
 import 'package:flutter/material.dart';
 import '../../data/datasources/pokemon_remote_data_source.dart';
 import '../../data/models/pokemon_list_item_model.dart';
 import '../widgets/pokemon_card.dart';
 import 'pokemon_detail_screen.dart';
+import 'favorites_screen.dart';
 
 class PokedexScreen extends StatefulWidget {
   const PokedexScreen({super.key});
@@ -95,6 +98,18 @@ class _PokedexScreenState extends State<PokedexScreen> {
       appBar: AppBar(
         title: const Text('Pokédex Explorer'),
         backgroundColor: Colors.red,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.favorite),
+            tooltip: 'Meus Favoritos',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FavoritesScreen()),
+              );
+            },
+          ),
+        ],
       ),
       body: Column(
         children: [
