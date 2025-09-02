@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart'; // NOVO: Importa o pacote provider
 import '../../data/datasources/pokemon_remote_data_source.dart';
 import '../../data/models/pokemon_detail_model.dart';
+import '../providers/favorite_provider.dart';
 
 class PokemonDetailScreen extends StatefulWidget {
-  // A tela recebe a URL do Pokémon para buscar os detalhes
   final String pokemonUrl;
-
   const PokemonDetailScreen({super.key, required this.pokemonUrl});
 
   @override
@@ -24,27 +24,52 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Detalhes do Pokémon'),
-        backgroundColor: Colors.red,
-      ),
-      body: FutureBuilder<PokemonDetailModel>(
-        future: _pokemonDetailFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-          if (snapshot.hasError) {
-            return Center(child: Text("Erro ao carregar: ${snapshot.error}"));
-          }
-          if (!snapshot.hasData) {
-            return const Center(child: Text("Pokémon não encontrado."));
-          }
-          final pokemon = snapshot.data!;
-          final capitalizedName = pokemon.name[0].toUpperCase() + pokemon.name.substring(1);
+    return FutureBuilder<PokemonDetailModel>(
+      future: _pokemonDetailFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Scaffold(
+            appBar: AppBar(backgroundColor: Colors.red),
+            body: const Center(child: CircularProgressIndicator()),
+          );
+        }
+        if (snapshot.hasError) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Erro"), backgroundColor: Colors.red),
+            body: Center(child: Text("Erro ao carregar: ${snapshot.error}")),
+          );
+        }
+        if (!snapshot.hasData) {
+          return Scaffold(
+            appBar: AppBar(title: const Text("Não encontrado"), backgroundColor: Colors.red),
+            body: const Center(child: Text("Pokémon não encontrado.")),
+          );
+        }
 
-          return SingleChildScrollView(
+        final pokemon = snapshot.data!;
+        final capitalizedName = pokemon.name[0].toUpperCase() + pokemon.name.substring(1);
+
+        final favoriteProvider = context.watch<FavoriteProvider>();
+        final isFavorite = favoriteProvider.isFavorite(pokemon.id);
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text(capitalizedName),
+            backgroundColor: Colors.red,
+            actions: [
+              IconButton(
+                icon: Icon(
+                  isFavorite ? Icons.star : Icons.star_border,
+                  color: isFavorite ? Colors.yellow : Colors.white,
+                  size: 28,
+                ),
+                onPressed: () {
+                  context.read<FavoriteProvider>().toggleFavorite(pokemon.id);
+                },
+              ),
+            ],
+          ),
+          body: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Center(
               child: Column(
@@ -57,18 +82,16 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                     style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
                   ),
                   Text(
-                    '#${pokemon.id.toString().padLeft(3, '0')}', 
+                    '#${pokemon.id.toString().padLeft(3, '0')}',
                     style: const TextStyle(fontSize: 18, color: Colors.grey),
                   ),
                   const SizedBox(height: 20),
-                  
                   const Text('Tipos', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: pokemon.types.map((type) => Chip(label: Text(type))).toList(),
                   ),
                   const SizedBox(height: 20),
-                  
                   const Text('Habilidades', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
                   Column(
                     children: pokemon.abilities.map((ability) => Text(ability)).toList(),
@@ -76,9 +99,9 @@ class _PokemonDetailScreenState extends State<PokemonDetailScreen> {
                 ],
               ),
             ),
-          );
-        },
-      ),
+          ),
+        );
+      },
     );
   }
 }
