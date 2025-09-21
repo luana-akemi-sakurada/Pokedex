@@ -1,8 +1,8 @@
-// lib/presentation/screens/pokedex_screen.dart
-
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import '../../data/datasources/pokemon_remote_data_source.dart';
 import '../../data/models/pokemon_list_item_model.dart';
+import '../styles/app_styles.dart';
 import '../widgets/pokemon_card.dart';
 import 'pokemon_detail_screen.dart';
 import 'favorites_screen.dart';
@@ -17,22 +17,32 @@ class PokedexScreen extends StatefulWidget {
 class _PokedexScreenState extends State<PokedexScreen> {
   final PokemonRemoteDataSource _dataSource = PokemonRemoteDataSource();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   List<PokemonListItemModel> _pokemonList = [];
   int _offset = 0;
   final int _limit = 20;
   bool _isLoading = false;
   bool _isFirstLoad = true;
+  bool _isLoadingMore = false;
 
   @override
   void initState() {
     super.initState();
     _loadMorePokemons();
+    _scrollController.addListener(() {
+      if (_scrollController.position.pixels >=
+              _scrollController.position.maxScrollExtent * 0.9 &&
+          !_isLoadingMore) {
+        _loadMorePokemons();
+      }
+    });
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -41,6 +51,9 @@ class _PokedexScreenState extends State<PokedexScreen> {
 
     setState(() {
       _isLoading = true;
+      if (_offset > 0) {
+        _isLoadingMore = true;
+      }
     });
 
     try {
@@ -56,34 +69,27 @@ class _PokedexScreenState extends State<PokedexScreen> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Falha ao carregar mais Pokémon: $e')),
+          SnackBar(content: Text('Falha ao carregar Pokémon: $e')),
         );
       }
     } finally {
       if (mounted) {
         setState(() {
           _isLoading = false;
+          _isLoadingMore = false;
         });
       }
     }
   }
 
   Future<void> _searchPokemon() async {
-    final rawQuery  = _searchController.text.trim().toLowerCase();
-    if (rawQuery .isEmpty) return;
+    final rawQuery = _searchController.text.trim().toLowerCase();
+    if (rawQuery.isEmpty) return;
 
-    String finalQuery;
-    final int? pokemonNumber = int.tryParse(rawQuery);
-
-    if (pokemonNumber != null) {
-      finalQuery = pokemonNumber.toString();
-    } else {
-      finalQuery = rawQuery;
-    }
-
-    final String url = 'https://pokeapi.co/api/v2/pokemon/$finalQuery';
+    final String url = 'https://pokeapi.co/api/v2/pokemon/$rawQuery';
     try {
-      await _dataSource.fetchPokemonDetails(url);
+      // Valida se o pokemon existe antes de navegar
+      await _dataSource.fetchPokemonDetails(url); 
       if (mounted) {
         Navigator.push(
           context,
@@ -104,12 +110,21 @@ class _PokedexScreenState extends State<PokedexScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text('Pokédex Explorer'),
-        backgroundColor: Colors.red,
+        backgroundColor: AppStyles.primaryColor,
+        elevation: 4.0,
+        centerTitle: true,
+        title: Text(
+          'Pokédex',
+          style: GoogleFonts.pressStart2p(
+            color: Colors.white,
+            fontSize: 20,
+          ),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.favorite),
+            icon: const Icon(Icons.star, color: Colors.white, size: 28),
             tooltip: 'Meus Favoritos',
             onPressed: () {
               Navigator.push(
@@ -123,53 +138,54 @@ class _PokedexScreenState extends State<PokedexScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.all(12.0),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _searchController,
-                    decoration: const InputDecoration(
-                      labelText: 'Buscar por nome ou número',
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
+            padding: const EdgeInsets.all(16.0),
+            child: TextField(
+              controller: _searchController,
+              onSubmitted: (_) => _searchPokemon(),
+              decoration: InputDecoration(
+                hintText: 'Buscar por nome ou número',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: Colors.grey[200],
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12.0),
+                  borderSide: BorderSide.none,
                 ),
-                const SizedBox(width: 8),
-                ElevatedButton(
-                  onPressed: _searchPokemon,
-                  child: const Text('Buscar'),
-                ),
-              ],
+                focusedBorder: OutlineInputBorder(
+                   borderRadius: BorderRadius.circular(12.0),
+                   borderSide: const BorderSide(color: AppStyles.secondaryColor, width: 2),
+                )
+              ),
             ),
           ),
           Expanded(
             child: _isFirstLoad
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: AppStyles.secondaryColor))
                 : GridView.builder(
-                    padding: const EdgeInsets.all(12.0),
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      crossAxisSpacing: 12.0,
-                      mainAxisSpacing: 12.0,
-                      childAspectRatio: 1.0,
+                      crossAxisSpacing: 16.0,
+                      mainAxisSpacing: 16.0,
+                      childAspectRatio: 0.9,
                     ),
-                    itemCount: _pokemonList.isEmpty ? 0 : _pokemonList.length + 1,
+                    itemCount: _pokemonList.length + (_isLoadingMore ? 1 : 0),
                     itemBuilder: (context, index) {
-                      if (index < _pokemonList.length) {
-                        final pokemon = _pokemonList[index];
-                        return PokemonCard(pokemon: pokemon);
-                      } else {
-                        return Center(
-                          child: _isLoading
-                              ? const CircularProgressIndicator()
-                              : ElevatedButton(
-                                  onPressed: _loadMorePokemons,
-                                  child: const Text('Carregar Mais'),
-                                ),
-                        );
+                       if (index == _pokemonList.length) {
+                        return const Center(child: CircularProgressIndicator(color: AppStyles.secondaryColor));
                       }
+                      final pokemon = _pokemonList[index];
+                      return PokemonCard(
+                        pokemon: pokemon,
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => PokemonDetailScreen(pokemonUrl: pokemon.url),
+                          ),
+                        ),
+                      );
                     },
                   ),
           ),
